@@ -103,9 +103,9 @@ WITH g, ct, p, s, value, playerInfo, keyMap, currentTime
 WHERE s[keyMap.prop] <> playerInfo.tech[keyMap.key].level AND NOT (s)-[:BUYS {type: keyMap.prop, value: playerInfo.tech[keyMap.key].level}]->()
 MATCH (g)-[:HAS_PLAYER]->()-[:HAS_SCIENCE]->(otherSci)-[:DURING]->(ct)
 WHERE otherSci[keyMap.prop] > s[keyMap.prop]
-MERGE (s)-[:BUYS {type: s[keyMap.prop], value: playerInfo.tech[keyMap.key].level, dateTime: currentTime}]->(otherSci)
+MERGE (s)-[:BUYS {type: keyMap.prop, value: playerInfo.tech[keyMap.key].level, dateTime: currentTime}]->(otherSci)
 WITH s, otherSci, g, ct, p, currentTime, value, playerInfo, keyMap
-MATCH (thirdSci)-[b:BUYS {type: s[keyMap.prop]}]->(otherSci)
+MATCH (thirdSci)-[b:BUYS {type: keyMap.prop}]->(otherSci)
 WHERE b.value > s[keyMap.prop] AND b.dateTime < currentTime
 MERGE (s)-[:BUYS {type: s[keyMap.prop], value: playerInfo.tech[keyMap.key].level, dateTime: currentTime}]->(thirdSci)`;
 
