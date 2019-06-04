@@ -1,0 +1,16 @@
+{
+  "name": "neptune_scraper",
+  "version": "1.0.0",
+  "description": "Pull data using neptune's pride api",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "neo4j-driver": "^1.7.5",
+    "request": "^2.88.0"
+  }
+}
