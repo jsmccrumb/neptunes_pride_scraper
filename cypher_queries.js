@@ -113,4 +113,31 @@ MATCH (thirdSci)-[b:BUYS {type: keyMap.prop}]->(otherSci)
 WHERE b.value > s[keyMap.prop] AND b.dateTime < currentTime
 MERGE (s)-[:BUYS {type: s[keyMap.prop], value: playerInfo.tech[keyMap.key].level, dateTime: currentTime}]->(thirdSci)`;
 
-module.exports = {trackScience, loadData, getGames, initGame};
+const shipsLost = `// ships lost info
+MATCH (ct)<-[:NEXT_TICK]-(pt)<-[:HAS_LOG_FOR]-(g:Game)-[:HAS_PLAYER]->(p),
+	(p)-[:HAS_FLEET]->(pf)-[:DURING]->(pt),
+    (p)-[:HAS_FLEET]->(cf)-[:DURING]->(ct),
+    (p)-[:HAS_EMPIRE]->(ce)-[:DURING]->(ct),
+    (p)-[:HAS_SCIENCE]->(cs)-[:DURING]->(ct)
+WITH g, p, pt, ct, pf, cf, ce, cs, toFloat(ce.totalIndustry * (5 + cs.manufacturing)) / 24.0 * toFloat(ct.tick - pt.tick) AS expectedGain
+WITH g, p, pt, ct, pf, cf, ce, cs, expectedGain, cf.ships - pf.ships AS actualGain
+WHERE expectedGain - actualGain > 5
+RETURN g.name, p.alias, ct.tick, actualGain, expectedGain, expectedGain - actualGain AS lost
+ORDER BY g.name, ct.tick DESC, (expectedGain - actualGain) DESC`;
+
+const starsStolen = `// stolen stars
+MATCH (p1)-[:HAS_EMPIRE]->(e1)<-[:IN_EMPIRE]-(s:Star)-[:IN_EMPIRE]->(e2)<-[:HAS_EMPIRE]-(p2), path=(e2)-[:DURING]->(t2)<-[:NEXT_TICK]-(t1)<-[:DURING]-(e1)
+WHERE p1 <> p2
+WITH p1, p2, s, min(t2.tick) AS takenTick, max(t1.tick) AS lastOwnedTick
+RETURN p1.alias AS startPlayer, p2.alias AS endPlayer, s.name AS star, lastOwnedTick, takenTick ORDER BY takenTick DESC, p1.alias, p2.alias`;
+
+const buyingScience = `// whos buying from whom
+MATCH (g)-[:HAS_PLAYER]->(p:Player {alias: 'M4Matt'})-[:HAS_SCIENCE]->(s)-[:DURING]->(t),
+(s)-[b:BUYS]->(os)<-[:HAS_SCIENCE]-(op)
+RETURN g.name, t.tick, p.alias, b.type, b.value, collect(DISTINCT(op.alias)) ORDER BY g.name, t.tick DESC`;
+
+const empireBuildup = `// civ advancement
+MATCH (g)-[:HAS_PLAYER]->(p:Player {alias: 'M4Matt'})-[:HAS_EMPIRE]->(e)-[:DURING]->(t)
+RETURN g.name, t.tick, p.alias, e.totalIndustry, e.totalEconomy, e.totalScience ORDER BY g.name, t.tick DESC`;
+
+module.exports = {trackScience, loadData, getGames, initGame, shipsLost, starsStolen, buyingScience, empireBuildup};
