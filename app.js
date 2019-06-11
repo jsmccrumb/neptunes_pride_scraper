@@ -5,6 +5,7 @@ const request = require('request');
 const jar = request.jar();
 const loginUrl = 'https://np.ironhelmet.com/arequest/login';
 const dataUrl = 'https://np.ironhelmet.com/grequest/order';
+const gameUrl = 'https://np.ironhelmet.com/mrequest/init_player';
 const queries = require('./cypher_queries');
 
 const performLogin = (cb) => {
@@ -13,6 +14,34 @@ const performLogin = (cb) => {
     cb && cb();
   });
 };
+
+const getNeptuneGames = () => {
+  request.post({url: gameUrl, form: {type: 'init_player'}, jar: jar}, (err, httpResponse, body) => {
+    if (err) return console.error('error in check games', err);
+    try {
+      const json = JSON.parse(body);
+      for (let game of json[1].open_games) {
+        initGame(game.number);
+      }
+    } catch (e) {
+      console.error('error in parse JSON', e);
+    }
+  });
+}
+
+const initGame = (gameId) => {
+  const session = driver.session();
+  session.writeTransaction((tx) => {
+    return tx.run(queries.initGame, {gameId});
+  }).then((res) => {
+    if (res.summary.counters.nodesCreated() > 0)
+      console.log('game init: ', gameId);
+    session.close();
+  }).catch((err) => {
+    console.error('ERROR in load data: ', err);
+    session && session.close && session.close();
+  });
+}
 
 const getData = (gameId, cb) => {
   const fileName = `report_game${gameId}_${Date.now()}.json`;
@@ -40,19 +69,23 @@ const getOpenGames = () => {
   const session = driver.session();
   session.readTransaction(tx => tx.run(queries.getGames))
     .then((resp) => {
-      performLogin(function loopOverRecords() { 
-        for (let record of resp.records) {
-          getData(record.get('gameId'));
-        }
-      });
+      for (let record of resp.records) {
+        getData(record.get('gameId'));
+      }
     }).catch(err => console.error('ERROR in get open games', err));
 }
 
 setInterval(() => {
   console.log('checking for stats for running games...');
-  getOpenGames();
+  performLogin(function scrapData() {
+    getNeptuneGames();
+    getOpenGames();
+  });
 }, 1800000);
 driver.onCompleted = () => {
   console.log('Neptune data scraper initialized... checking data now!');
-  getOpenGames();
+  performLogin(function scrapData() {
+    getNeptuneGames();
+    getOpenGames();
+  });
 };

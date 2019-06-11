@@ -1,3 +1,7 @@
+const initGame = `// merge on game id so it starts getting tracked
+  MERGE (g:Game {gameId: $gameId})
+`;
+
 const getGames = `// get currently active games
   MATCH (g:Game) WHERE (NOT g.isOver) OR g.isOver IS NULL
   RETURN g.gameId AS gameId
@@ -109,4 +113,4 @@ MATCH (thirdSci)-[b:BUYS {type: keyMap.prop}]->(otherSci)
 WHERE b.value > s[keyMap.prop] AND b.dateTime < currentTime
 MERGE (s)-[:BUYS {type: s[keyMap.prop], value: playerInfo.tech[keyMap.key].level, dateTime: currentTime}]->(thirdSci)`;
 
-module.exports = {trackScience, loadData, getGames};
+module.exports = {trackScience, loadData, getGames, initGame};
