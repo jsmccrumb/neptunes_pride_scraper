@@ -76,12 +76,11 @@ const getOpenGames = () => {
 }
 
 setInterval(() => {
-  console.log('checking for stats for running games...');
   performLogin(function scrapData() {
     getNeptuneGames();
     getOpenGames();
   });
-}, 1800000);
+}, 10 * 60 * 1000); // every 10 mins
 driver.onCompleted = () => {
   console.log('Neptune data scraper initialized... checking data now!');
   performLogin(function scrapData() {

@@ -111,7 +111,7 @@ MERGE (s)-[:BUYS {type: keyMap.prop, value: playerInfo.tech[keyMap.key].level, d
 WITH s, otherSci, g, ct, p, currentTime, value, playerInfo, keyMap
 MATCH (thirdSci)-[b:BUYS {type: keyMap.prop}]->(otherSci)
 WHERE b.value > s[keyMap.prop] AND b.dateTime < currentTime
-MERGE (s)-[:BUYS {type: s[keyMap.prop], value: playerInfo.tech[keyMap.key].level, dateTime: currentTime}]->(thirdSci)`;
+MERGE (s)-[:BUYS {type: keyMap.prop, value: playerInfo.tech[keyMap.key].level, dateTime: currentTime}]->(thirdSci)`;
 
 const shipsLost = `// ships lost info
 MATCH (ct)<-[:NEXT_TICK]-(pt)<-[:HAS_LOG_FOR]-(g:Game)-[:HAS_PLAYER]->(p),
